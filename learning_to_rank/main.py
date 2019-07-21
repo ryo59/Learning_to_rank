@@ -20,14 +20,13 @@ if __name__ == '__main__':
                                      'drop_rate': 0.01})
         model_write = str(model)
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-        epochs =100
-        # batch_size = 64
-        logs_dir = './logs_model'
+        epochs =2
+        logs_dir = './logs/logs_model'
         best_ndcg = {}
         model_file = {}
         loss_list = []
         val_dcg_list = []
-        writer = SummaryWriter(log_dir="logs_0712_dr0.5")
+        writer = SummaryWriter(log_dir="./logs/tensorboad_logs_0712_dr0.5")
 
         train_file = os.path.join("/Users/inagaki_ryo/dataset/MQ2007", fold, "train.txt")
         vali_file = os.path.join("/Users/inagaki_ryo/dataset/MQ2007", fold, "vali.txt")
@@ -71,12 +70,11 @@ if __name__ == '__main__':
 
             sum_fold_ndcg_k[k][fold] = float(epoch_test_ndcg[k])
 
-    with open("result_dr05.txt", "w") as f:
+    with open("./result/result_0721.txt", "w") as f:
         f.write("Model Architecture：\n{}\nEpoch：{}\n\n".format(model_write, epochs))
 
         for k in [1, 3, 5, 10]:
             ave_kfold_ndcg = {}
-            #print(sum_fold_ndcg_k)
             ave_kfold_ndcg = sum(sum_fold_ndcg_k[k].values()) / float(len(k_fold))
             for fold in k_fold:
                 print("{} Test NDCG@{}：{}".format(fold, k, sum_fold_ndcg_k[k][fold]))

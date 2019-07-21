@@ -36,24 +36,3 @@ def valid_test_step(model, dataset):
 
     return ndcg_k
 
-# def valid_test_step(model, dataset):
-#     model.eval()
-#     ndcg_k = {}
-#     for k in [1, 3, 5, 10]:
-#         ndgc_ls = []
-#         for doc_data, y in dataset:
-#             label, data = y, doc_data
-#             pred = model.predict(data)
-#             pred_ar = pred.squeeze(1).detach()
-#             label_ar = label.detach()
-#             # print(pred_ar)
-#             # print(label_ar)
-#             _, order = torch.sort(pred_ar, descending=True)
-#             y_pred_sorted = label_ar[order]
-#             ndgc_s = ndcg_score_tensor(label_ar, y_pred_sorted, k=k)
-#             if not math.isnan(ndgc_s):
-#                 ndgc_ls.append(ndgc_s)
-#
-#         ndcg_k[k] = sum(ndgc_ls) / len(ndgc_ls)
-#
-#     return ndcg_k

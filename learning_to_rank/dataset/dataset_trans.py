@@ -23,7 +23,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 import pickle
 
-## due to the restriction of 4GB ##
+# due to the restriction of 4GB
 max_bytes = 2**31 - 1
 
 def pickle_save(target, file):
@@ -251,9 +251,6 @@ def torch_batch_triu(batch_mats=None, k=0, pair_type="All", batch_std_labels=Non
 			   pairs of documents having the same relevance level.
 	UpNoTies:   the pairs consisting of two documents of the same relevance level are removed
 	UpNo00:     the pairs consisting of two non-relevant documents are removed
-	:param batch_mats: [batch, m, m]
-	:param k: the offset w.r.t. the diagonal line: k=0 means including the diagonal line, k=1 means upper triangular part without the diagonal line
-	:return:
 	"""
 
 	assert batch_mats.size(0) == batch_mats.size(1)
