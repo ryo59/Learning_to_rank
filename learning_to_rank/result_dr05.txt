@@ -1,0 +1,44 @@
+Model Architecture：
+RankNet(
+  (model): Sequential(
+    (L_1): Linear(in_features=46, out_features=128, bias=True)
+    (ACT_1): ReLU()
+    (DR_2): Dropout(p=0.5)
+    (L_2): Linear(in_features=128, out_features=64, bias=True)
+    (ACT_2): LeakyReLU(negative_slope=0.01)
+    (DR_3): Dropout(p=0.5)
+    (L_3): Linear(in_features=64, out_features=32, bias=True)
+    (ACT_3): LeakyReLU(negative_slope=0.01)
+    (L_4): Linear(in_features=32, out_features=1, bias=True)
+  )
+)
+Epoch：100
+
+Fold1 Test NDCG@1：0.4613095238095239 
+Fold2 Test NDCG@1：0.383480825958702 
+Fold3 Test NDCG@1：0.38053097345132725 
+Fold4 Test NDCG@1：0.3706981317600785 
+Fold5 Test NDCG@1：0.4149459193706981 
+Average Test NDCG@1: 0.4021930748700659
+
+Fold1 Test NDCG@3：0.4503002446275198 
+Fold2 Test NDCG@3：0.3907387238776689 
+Fold3 Test NDCG@3：0.4205451082527637 
+Fold4 Test NDCG@3：0.36915608059480687 
+Fold5 Test NDCG@3：0.411379966774395 
+Average Test NDCG@3: 0.4084240248254309
+
+Fold1 Test NDCG@5：0.46143371278620343 
+Fold2 Test NDCG@5：0.4005520004189243 
+Fold3 Test NDCG@5：0.41966812269580583 
+Fold4 Test NDCG@5：0.37899253916413805 
+Fold5 Test NDCG@5：0.41344456230885923 
+Average Test NDCG@5: 0.41481818747478616
+
+Fold1 Test NDCG@10：0.47662872601238315 
+Fold2 Test NDCG@10：0.4362975396283415 
+Fold3 Test NDCG@10：0.4367935703652143 
+Fold4 Test NDCG@10：0.4127509043188761 
+Fold5 Test NDCG@10：0.4483608640321178 
+Average Test NDCG@10: 0.44216632087138663
+
