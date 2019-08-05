@@ -53,14 +53,13 @@ class RankNet(nn.Module):
         batch_pred = self.model(torch_batch_rankings)  # batch_pred = [40,1]
         batch_pred_dim = torch.squeeze(batch_pred, 1) # batch_pred_dim = [40]
         batch_pred_diffs = batch_pred - torch.unsqueeze(batch_pred_dim, 0)  # batch_pred_diffs = [40, 40]
-        batch_s_ij = torch_batch_triu(batch_mats=batch_pred_diffs, k=1,
+        batch_s_ij, tor_row_inds, tor_col_inds = torch_batch_triu(batch_mats=batch_pred_diffs, k=1,
                                                                   pair_type="All")  # batch_s_ij = [780]
 
         # Create a pair from　label
         batch_std = torch_batch_std_labels # batch_std = [40]
         batch_std_diffs = torch.unsqueeze(batch_std, 1) - torch.unsqueeze(batch_std, 0)  # batch_std_diffs = [40, 40]
-        batch_s_ij_label = torch_batch_triu(batch_mats=batch_std_diffs, k=1,
-                                                                  pair_type="All")# batch_s_ij_label = [780]
+        batch_s_ij_label = batch_std_diffs[tor_row_inds, tor_col_inds]
 
         # Align to -1 ~ 1
         batch_Sij = torch.clamp(batch_s_ij_label, -1, 1)
@@ -69,11 +68,7 @@ class RankNet(nn.Module):
         batch_loss_1st = 0.5 * sigma * batch_s_ij * (1.0 - batch_Sij)
         batch_loss_2nd = torch.log(torch.exp(-sigma * batch_s_ij) + 1.0)
         batch_loss = torch.sum(batch_loss_1st + batch_loss_2nd) / batch_s_ij.size(0)
-
-
         return batch_loss
 
     def predict(self, x):
         return self.model(x)
-
-

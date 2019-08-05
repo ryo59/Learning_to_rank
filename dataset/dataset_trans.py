@@ -289,4 +289,4 @@ def torch_batch_triu(batch_mats=None, k=0, pair_type="All", batch_std_labels=Non
 	tor_col_inds = torch.LongTensor(col_inds).to(device) if torch.cuda.is_available() else torch.LongTensor(col_inds)
 	batch_triu = batch_mats[tor_row_inds, tor_col_inds]
 
-	return batch_triu
+	return batch_triu, tor_row_inds, tor_col_inds

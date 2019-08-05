@@ -26,7 +26,7 @@ if __name__ == '__main__':
         model_file = {}
         loss_list = []
         val_dcg_list = []
-        writer = SummaryWriter(log_dir="./logs/tensorboad_logs_0712_dr0.5")
+        writer = SummaryWriter(log_dir="./logs/tensorboad_logs_")
 
         train_file = os.path.join("/Users/inagaki_ryo/dataset/MQ2007", fold, "train.txt")
         vali_file = os.path.join("/Users/inagaki_ryo/dataset/MQ2007", fold, "vali.txt")

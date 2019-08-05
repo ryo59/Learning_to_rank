@@ -28,9 +28,10 @@ def valid_test_step(model, dataset):
         _, order = torch.sort(pred_ar, descending=True)
         y_pred_sorted = label_ar[order]
         for k in [1, 3, 5, 10]:
-            ndcg_s = ndcg_score_tensor(label_ar, y_pred_sorted, k=k)
-            if not math.isnan(ndcg_s):
-                ndcg_ls[k].append(ndcg_s)
+            if len(label_ar) > k:
+                ndcg_s = ndcg_score_tensor(label_ar, y_pred_sorted, k=k)
+                if not math.isnan(ndcg_s):
+                    ndcg_ls[k].append(ndcg_s)
     for k in [1, 3, 5, 10]:
         ndcg_k[k] = sum(ndcg_ls[k]) / len(ndcg_ls[k])
 

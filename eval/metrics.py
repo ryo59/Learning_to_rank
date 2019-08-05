@@ -9,35 +9,22 @@ import numpy as np
 def ndcg_score_tensor(y_true, y_pred, k, gains="exponential"):
 
     def dcg_score_tensor(sorted_label, k, gains="exponential"):
+        sorted_label_k = sorted_label[:k].float()
 
-        if len(sorted_label) < k:
-            sorted_label_k = sorted_label[:len(sorted_label)].float()
-
-            if gains == "exponential":
-                gains = torch.pow(2, sorted_label_k) - 1
-            else:
-                raise ValueError("Invalid gains option.")
-
-            discounts = torch.log2(torch.arange(len(sorted_label), dtype=torch.float) + 2.0)
+        if gains == "exponential":
+            gains = torch.pow(2.0, sorted_label_k) - 1.0
 
         else:
-            sorted_label_k = sorted_label[:k].float()
+            raise ValueError("Invalid gains option.")
 
-            if gains == "exponential":
-                gains = torch.pow(2, sorted_label_k) - 1
-            else:
-                raise ValueError("Invalid gains option.")
+        discounts = torch.log2(torch.arange(k).type(torch.FloatTensor) + 2.0)
 
-            discounts = torch.log2(torch.arange(k, dtype=torch.float) + 2.0)
-
-        return torch.sum(gains / discounts).item()
+        return torch.sum(gains / discounts)
 
     best = dcg_score_tensor(y_true, k, gains)
     actual = dcg_score_tensor(y_pred, k, gains)
-    if best == 0:
-        return 0
-    else:
-        return (actual / best)
+
+    return (actual / best).item()
 
 
 
