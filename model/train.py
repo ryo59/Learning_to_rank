@@ -20,10 +20,12 @@ def valid_test_step(model, dataset):
     model.eval()
     ndcg_ls = defaultdict(list)
     ndcg_k = {}
+    denominator = defaultdict(list)
     for doc_data, y in dataset:
         label, data = y, doc_data
         pred = model.predict(data)
         pred_ar = pred.squeeze(1).detach()
+        #print(pred_ar.shape)
         label_ar = label.detach()
         _, order = torch.sort(pred_ar, descending=True)
         y_pred_sorted = label_ar[order]
@@ -32,8 +34,12 @@ def valid_test_step(model, dataset):
                 ndcg_s = ndcg_score_tensor(label_ar, y_pred_sorted, k=k)
                 if not math.isnan(ndcg_s):
                     ndcg_ls[k].append(ndcg_s)
+
+            else:
+                denominator[k].append(len(label_ar))
+
     for k in [1, 3, 5, 10]:
-        ndcg_k[k] = sum(ndcg_ls[k]) / len(ndcg_ls[k])
+        # Subtraction for the number of documents less than k
+        ndcg_k[k] = sum(ndcg_ls[k]) / (len(ndcg_ls[k]) - len(denominator[k]))
 
     return ndcg_k
-

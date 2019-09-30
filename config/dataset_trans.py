@@ -23,7 +23,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 import pickle
 
-# due to the restriction of 4GB
+## due to the restriction of 4GB ##
 max_bytes = 2**31 - 1
 
 def pickle_save(target, file):
@@ -114,7 +114,7 @@ class MSL2RDataLoader(L2RDataLoader):
 			np.random.shuffle(qids)
 			for qid in qids:
 				sorted_qdf = self.df[self.df.qid == qid].sort_values('rele_truth', ascending=False)
-
+				# if sorted_qdf["rele_truth"].isin([1.0]).any():
 				doc_reprs  = sorted_qdf[self.feature_cols].values
 				if self.scale_data:
 					doc_reprs = self.scaler.fit_transform(doc_reprs)
@@ -124,6 +124,8 @@ class MSL2RDataLoader(L2RDataLoader):
 				#doc_ids    = sorted_qdf['#docid'].values # commented due to rare usage
 
 				list_Qs.append((qid, doc_reprs, doc_labels))
+				# else:
+				# 	pass
 
 			if self.buffer: pickle_save(list_Qs, file=self.perquery_file)
 
@@ -241,52 +243,3 @@ class L2RDataset(data.Dataset):
 
 	def __len__(self):
 		return len(self.list_torch_Qs)
-
-
-
-def torch_batch_triu(batch_mats=None, k=0, pair_type="All", batch_std_labels=None):
-	"""
-	Get unique document pairs being consistent with the specified pair_type. This function is used to avoid duplicate computation.
-	All:        pairs including both pairs of documents across different relevance levels and
-			   pairs of documents having the same relevance level.
-	UpNoTies:   the pairs consisting of two documents of the same relevance level are removed
-	UpNo00:     the pairs consisting of two non-relevant documents are removed
-	"""
-
-	assert batch_mats.size(0) == batch_mats.size(1)
-	#assert pair_type in PAIR_TYPE
-
-	m = batch_mats.size(0)  # the number of documents
-
-	if pair_type == "All":
-		row_inds, col_inds = np.triu_indices(m,k=k)
-
-
-	elif pair_type == "UpNo00":
-		assert batch_std_labels.size(0) == 1
-
-		row_inds, col_inds = np.triu_indices(m, k=k)
-		std_labels = torch.squeeze(batch_std_labels, 0)
-		labels = std_labels.cpu().numpy() if torch.cuda.is_available() else std_labels.data.numpy()
-
-		pairs = [e for e in zip(row_inds, col_inds) if
-				 not (0 == labels[e[0]] and 0 == labels[e[1]])]  # remove pairs of 00 comparisons
-		row_inds = [e[0] for e in pairs]
-		col_inds = [e[1] for e in pairs]
-
-	elif pair_type == "UpNoTies":
-		assert batch_std_labels.size(0) == 1
-		std_labels = torch.squeeze(batch_std_labels, 0)
-
-		row_inds, col_inds = np.triu_indices(m, k=k)
-		labels = std_labels.cpu().numpy() if torch.cuda.is_available() else std_labels.data.numpy()
-		pairs = [e for e in zip(row_inds, col_inds) if
-				 labels[e[0]] != labels[e[1]]]  # remove pairs of documents of the same level
-		row_inds = [e[0] for e in pairs]
-		col_inds = [e[1] for e in pairs]
-
-	tor_row_inds = torch.LongTensor(row_inds).to(device) if torch.cuda.is_available() else torch.LongTensor(row_inds)
-	tor_col_inds = torch.LongTensor(col_inds).to(device) if torch.cuda.is_available() else torch.LongTensor(col_inds)
-	batch_triu = batch_mats[tor_row_inds, tor_col_inds]
-
-	return batch_triu, tor_row_inds, tor_col_inds
