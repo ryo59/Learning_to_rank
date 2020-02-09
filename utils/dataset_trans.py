@@ -1,4 +1,3 @@
-# -- coding: utf-8 --
 
 import os
 import numpy  as np
@@ -91,8 +90,6 @@ class MSL2RDataLoader(L2RDataLoader):
 	def load_data(self):
 		'''
 		Load data at a per-query unit consisting of {scaled} {des-sorted} document vectors and standard labels
-		:param given_scaler: scaler learned over entire training data, which is only needed for dataset-level scaling
-		:return:
 		'''
 		if self.data_id in MSLETOR:
 			self.num_features = 46
@@ -114,25 +111,55 @@ class MSL2RDataLoader(L2RDataLoader):
 			np.random.shuffle(qids)
 			for qid in qids:
 				sorted_qdf = self.df[self.df.qid == qid].sort_values('rele_truth', ascending=False)
-				# if sorted_qdf["rele_truth"].isin([1.0]).any():
-				doc_reprs  = sorted_qdf[self.feature_cols].values
-				if self.scale_data:
-					doc_reprs = self.scaler.fit_transform(doc_reprs)
+				#MQ2007, 2008
+				if self.data_id in MSLETOR:
+					# Pass queries that have only 0 relevance documents
+					if sorted_qdf["rele_truth"].isin([1.0, 2.0]).any():
+						doc_reprs = sorted_qdf[self.feature_cols].values
 
-				doc_labels = sorted_qdf['rele_truth'].values
+						if self.scale_data:
+							doc_reprs = self.scaler.fit_transform(doc_reprs)
 
-				#doc_ids    = sorted_qdf['#docid'].values # commented due to rare usage
+						doc_labels = sorted_qdf['rele_truth'].values
 
-				list_Qs.append((qid, doc_reprs, doc_labels))
-				# else:
-				# 	pass
+						list_Qs.append((qid, doc_reprs, doc_labels))
+					else:
+						pass
+
+				#MSLR-WEB10K, 30K
+				if self.data_id in MSLRWEB:
+					# Pass queries that have only 0 relevance documents
+					if sorted_qdf["rele_truth"].isin([1.0, 2.0, 3.0, 4.0]).any():
+
+						doc_reprs  = sorted_qdf[self.feature_cols].values
+
+						if self.scale_data:
+							doc_reprs = self.scaler.fit_transform(doc_reprs)
+
+						# Remove if standardized document features are all zero(MSLRWEB)
+						delete_num = []
+						for doc_num in range(doc_reprs.shape[0]):
+							if not doc_reprs[doc_num].any():
+								delete_num.append(doc_num)
+
+						if not len(delete_num) > 0:
+							doc_labels = sorted_qdf['rele_truth'].values
+							list_Qs.append((qid, doc_reprs, doc_labels))
+
+						else :
+							pass
+
+					else:
+						pass
 
 			if self.buffer: pickle_save(list_Qs, file=self.perquery_file)
 
 			return list_Qs
 
 	def get_df_file(self):
-		''' Load original data file as a dataframe. If buffer exists, load buffered file. '''
+		'''
+		Load original data file as a dataframe. If buffer exists, load buffered file.
+		'''
 
 		if os.path.exists(self.df_file):
 			self.df = pd.read_pickle(self.df_file)
@@ -150,7 +177,7 @@ class MSL2RDataLoader(L2RDataLoader):
 
 
 	def load_LETOR4(self):
-		'''  '''
+
 		df = pd.read_csv(self.file, sep=" ", header=None)
 		df.drop(columns=df.columns[[-2, -3, -5, -6, -8, -9]], axis=1, inplace=True)  # remove redundant keys
 		#print(self.num_features, len(df.columns) - 5)
@@ -202,10 +229,6 @@ class MSL2RDataLoader(L2RDataLoader):
 			self.scaler = RobustScaler()
 		elif self.scaler_id == 'StandardScaler':
 			self.scaler = StandardScaler()
-
-
-
-
 
 class L2RDataset(data.Dataset):
 	'''

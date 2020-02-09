@@ -1,6 +1,4 @@
-# -- coding: utf-8 --
-
-from eval.metrics import ndcg_score_tensor
+from metric.ndcg import ndcg_score_tensor
 import torch
 import math
 from collections import defaultdict
@@ -16,6 +14,7 @@ def train_step(model, optimizer, dataset):
         optimizer.step()
     return sum(epoch_loss_ls) / len(epoch_loss_ls)
 
+
 def valid_test_step(model, dataset):
     model.eval()
     ndcg_ls = defaultdict(list)
@@ -24,9 +23,8 @@ def valid_test_step(model, dataset):
     for doc_data, y in dataset:
         label, data = y, doc_data
         pred = model.predict(data)
-        pred_ar = pred.squeeze(1).detach()
-        #print(pred_ar.shape)
-        label_ar = label.detach()
+        pred_ar = pred.squeeze(1)
+        label_ar = label
         _, order = torch.sort(pred_ar, descending=True)
         y_pred_sorted = label_ar[order]
         for k in [1, 3, 5, 10]:

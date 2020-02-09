@@ -1,4 +1,4 @@
-# -- coding: utf-8 --
+
 import torch
 import torch.nn as nn
 
@@ -13,6 +13,8 @@ def activation(str):
         return nn.Sigmoid() # Sigmoid(x)= 1 / 1+exp(−x)
     elif str == 'Tan':
         return nn.Tanh()    # (exp(x)-exp(-x)) / (exp(x)+exp(-x))
+    elif str == 'CELU':
+        return nn.CELU()
 
     else:
         raise NotImplementedError

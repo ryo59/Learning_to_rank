@@ -1,5 +1,5 @@
-# -- coding: utf-8 --
 import torch
+import numpy as np
 import torch.nn as nn
 from torch.nn.init import xavier_normal_ as nr_init
 from config.activation import activation
@@ -11,8 +11,8 @@ class RankNet(nn.Module):
         super(RankNet, self).__init__()
         self.model = self.ini_ffnns(**f_para_dict)
 
-    def ini_ffnns(self, input_dim=None, h_dim=None, out_dim=None, num_layers=None, HD_AF=None, HN_AF=None, TL_AF=None, drop_rate=None, apply_tl_af=False):
-        head_AF, hidden_AF, tail_AF = activation(HD_AF), activation(HN_AF), activation(TL_AF)
+    def ini_ffnns(self, input_dim=None, h_dim=None, out_dim=1, num_layers=None, hd_af=None, hn_af=None, tl_af=None, dropout_rate=None, apply_tl_af=None):
+        head_AF, hidden_AF, tail_AF = activation(hd_af), activation(hn_af), activation(tl_af)
 
         ffnns = nn.Sequential()
         if 1 == num_layers:
@@ -31,7 +31,7 @@ class RankNet(nn.Module):
             if num_layers > 2:           # Hidden layer
                 for i in range(2, num_layers):
                     h_dim_half = h_dim / 2
-                    ffnns.add_module('_'.join(['DR', str(i)]), nn.Dropout(drop_rate))
+                    ffnns.add_module('_'.join(['DR', str(i)]), nn.Dropout(dropout_rate))
                     nr_hi = nn.Linear(h_dim, int(h_dim_half))
                     nr_init(nr_hi.weight)
                     ffnns.add_module('_'.join(['L', str(i)]), nr_hi)
@@ -57,7 +57,7 @@ class RankNet(nn.Module):
         batch_std = torch_batch_std_labels # batch_std = [40]
         batch_std_diffs = torch.unsqueeze(batch_std, 1) - torch.unsqueeze(batch_std, 0)  # batch_std_diffs = [40, 40]
 
-        # If the label pair is bigger than 1, it is set to 1, and less than -1 is set to -1.
+        # Align to -1 ~ 1
         batch_Sij = torch.clamp(batch_std_diffs, -1, 1)
 
         sigma = 1.0
@@ -70,6 +70,8 @@ class RankNet(nn.Module):
         combination = (batch_loss_1st.shape[0] * (batch_loss_1st.shape[0] - 1)) / 2
 
         batch_loss_triu = (torch.sum(batch_loss) / 2) / combination
+
+        #print(batch_loss_triu)
 
         return batch_loss_triu
 

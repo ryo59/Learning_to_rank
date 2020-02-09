@@ -1,8 +1,5 @@
-# -- coding: utf-8 --
-
 import torch
 import numpy as np
-
 
 
 # For LambdaRank
