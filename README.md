@@ -1,15 +1,17 @@
 # Learning_to_rank
 Learning to rank in Pytorch
 ### Dataset
-[MQ2007](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/)
+[MQ2007, 2008](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/)  
+[MSLR-WEB10K, 30K](https://www.microsoft.com/en-us/research/project/mslr/)
+
 ### Prerequisites
 - Python 3.6
 - PyTorch 1.1.0
 - tb-nightly, future # for tensorboard
 
 ### Usage
-1. Download the dataset from [MQ2007](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/)
-2. To train RankNet:
+1. Download the dataset ([MQ2007, 2008](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/) or [MSLR-WEB10K, 30K](https://www.microsoft.com/en-us/research/project/mslr/))
+2. Train RankNet or LambdaRank:
 
 ```
 python main.py --data MQ2007 --dir_data "/$DATA_PATH/MQ2007" --model RankNet
