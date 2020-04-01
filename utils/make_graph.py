@@ -6,7 +6,7 @@ def make_loss_ndcg_graph(fold, dataset, model, epoch, index, epoch_train_loss_li
     ax1 = fig.add_subplot(1, 1, 1)
 
     ax1.plot(range(epoch), epoch_train_loss_list, 'r-', label='train_loss')
-    ax2 = ax1.twinx()  # 2つのプロットを関連付ける
+    ax2 = ax1.twinx() 
     ax2.plot(range(epoch), epoch_valid_ndcg_list[index], 'b-', label='NDCG@{}'.format(index))
 
     h1, l1 = ax1.get_legend_handles_labels()
