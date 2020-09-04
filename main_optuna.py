@@ -140,15 +140,17 @@ def get_activation(trial):
 
 def objective(trial):
 
-  #畳み込み層の数
+  #層の数
   num_layer = trial.suggest_int('num_layer', 3, 7)
 
-  #各畳込み層のフィルタ数
+  #中間層のdimension
   h_dim = [int(trial.suggest_discrete_uniform("h_dim_"+str(i), 16, 128, 16)) for i in range(num_layer)]
-
+    
+  #learning rate
   lr_rate = trial.suggest_uniform("dropout_l", 0.2, 0.5)
 
   model = RankNet(trial, num_layer, 46, h_dim, lr_rate).to(device)
+
   optimizer = get_optimizer(trial, model)
 
   for step in range(EPOCH):
