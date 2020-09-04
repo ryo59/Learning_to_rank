@@ -16,16 +16,11 @@ from metric.ndcg import ndcg_score_tensor
 import math
 from collections import defaultdict
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 optuna.logging.disable_default_handler()
 
 args_obj = ArgsUtil()
 l2r_args = args_obj.get_l2r_args()
-
-train_file = os.path.join(l2r_args.dir_data, "Fold1", "train.txt")
-test_file = os.path.join(l2r_args.dir_data, "Fold1", "test.txt")
-
-train_loader =  L2RDataset(file=train_file, data_id=l2r_args.data)
-test_loader = L2RDataset(file=test_file, data_id=l2r_args.data)
 
 #モデルの定義
 class RankNet(nn.Module):
@@ -44,7 +39,7 @@ class RankNet(nn.Module):
     def forward(self, x):
         for i, l in enumerate(self.fc):
             x = self.dropout(x)
-            nr_init(x.weight)
+            #nr_init(x.weight)
             x = l(x)
             x = self.activation(x)
         x = self.fc_last(x)
@@ -53,7 +48,7 @@ class RankNet(nn.Module):
     def loss(self, torch_batch_rankings, torch_batch_std_labels):
 
         # Make a pair from the model predictions
-        batch_pred = self.model(torch_batch_rankings)  # batch_pred = [40,1]
+        batch_pred = self.forward(torch_batch_rankings)  # batch_pred = [40,1]
         batch_pred_dim = torch.squeeze(batch_pred, 1) # batch_pred_dim = [40]
         batch_pred_diffs = batch_pred - torch.unsqueeze(batch_pred_dim, 0)  # batch_pred_diffs = [40, 40]
 
@@ -70,6 +65,7 @@ class RankNet(nn.Module):
 
         # Calculate loss outside diagonal
         diagona = 1 - torch.eye(batch_loss_1st.shape[0])
+        diagona = diagona.to(device)
         batch_loss = (batch_loss_1st + batch_loss_2nd) * diagona
         combination = (batch_loss_1st.shape[0] * (batch_loss_1st.shape[0] - 1)) / 2
 
@@ -80,7 +76,7 @@ class RankNet(nn.Module):
         return batch_loss_triu
 
     def predict(self, x):
-        return self.model(x)
+        return self.forward(x)
 
 
 def train(model, device, train_loader, optimizer):
@@ -117,7 +113,7 @@ def test(model, device, test_loader):
         # Subtraction for the number of documents less than k
         ndcg_k[k] = sum(ndcg_ls[k]) / (len(ndcg_ls[k]) - len(denominator[k]))
 
-    return ndcg_k
+    return ndcg_k[5]
 
 def get_optimizer(trial, model):
   optimizer_names = ['Adam', 'MomentumSGD', 'rmsprop']
@@ -142,19 +138,15 @@ def get_activation(trial):
     activation = F.elu
   return activation
 
-EPOCH = 10
-#num_layer, input_dim, h_dim, lr_rate)
-
 def objective(trial):
-  device = "cuda" if torch.cuda.is_available() else "cpu"
 
   #畳み込み層の数
   num_layer = trial.suggest_int('num_layer', 3, 7)
 
   #各畳込み層のフィルタ数
-  h_dim = [int(trial.suggest_discrete_uniform("h_dim_"+str(i), 128, 16, 16)) for i in range(num_layer)]
+  h_dim = [int(trial.suggest_discrete_uniform("h_dim_"+str(i), 16, 128, 16)) for i in range(num_layer)]
 
-  lr_rate = [trial.suggest_uniform("dropout_l{}".format(i), 0.2, 0.5)for i in range(num_layer)]
+  lr_rate = trial.suggest_uniform("dropout_l", 0.2, 0.5)
 
   model = RankNet(trial, num_layer, 46, h_dim, lr_rate).to(device)
   optimizer = get_optimizer(trial, model)
@@ -166,6 +158,45 @@ def objective(trial):
   return ndcg
 
 if __name__ == '__main__':
-  TRIAL_SIZE = 100
-  study = optuna.create_study()
-  study.optimize(objective, n_trials=TRIAL_SIZE)
+  EPOCH = 10
+  k_fold = ["Fold1", "Fold2", "Fold3", "Fold4", "Fold5"]
+  torch.manual_seed(1)
+
+  for fold in k_fold:
+    train_file = os.path.join(l2r_args.dir_data, fold, "train.txt")
+    test_file = os.path.join(l2r_args.dir_data, fold, "test.txt")
+
+    train_loader =  L2RDataset(file=train_file, data_id=l2r_args.data)
+    test_loader = L2RDataset(file=test_file, data_id=l2r_args.data)
+    TRIAL_SIZE = 100
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=TRIAL_SIZE)
+    print(study.best_params)
+    print(study.best_value)
+
+'''
+Fold-1
+Best_param：
+{'num_layer': 3, 'h_dim_0': 128.0, 'h_dim_1': 80.0, 'h_dim_2': 112.0, 'dropout_l': 0.3150133007158166, 'activation': 'ELU', 'optimizer': 'Adam', 'weight_decay': 1.2534778808926907e-08, 'adam_lr': 0.0005907905823276296}
+Best_value：0.5278921823563247
+
+Fold-2
+Best_param：
+{'num_layer': 7, 'h_dim_0': 96.0, 'h_dim_1': 112.0, 'h_dim_2': 32.0, 'h_dim_3': 48.0, 'h_dim_4': 48.0, 'h_dim_5': 48.0, 'h_dim_6': 112.0, 'dropout_l': 0.3131862074693803, 'activation': 'ReLU', 'optimizer': 'Adam', 'weight_decay': 0.0002804740022001059, 'adam_lr': 0.0007749602159977905}
+Best_value：0.48650141763286964
+
+Fold-3
+Best_param：
+{'num_layer': 5, 'h_dim_0': 64.0, 'h_dim_1': 64.0, 'h_dim_2': 112.0, 'h_dim_3': 48.0, 'h_dim_4': 80.0, 'dropout_l': 0.20649462921980052, 'activation': 'ELU', 'optimizer': 'Adam', 'weight_decay': 1.3714188295388997e-09, 'adam_lr': 0.00023487217434972854}
+Best_value：0.48314160250001037
+
+Fold-4
+Best_param：
+{'num_layer': 3, 'h_dim_0': 112.0, 'h_dim_1': 80.0, 'h_dim_2': 112.0, 'dropout_l': 0.21075310082836404, 'activation': 'ELU', 'optimizer': 'Adam', 'weight_decay': 2.5812515729177685e-09, 'adam_lr': 0.005947532041158936}
+Best_value：0.4499733903738734
+
+Fold-5
+Best_param：
+{'num_layer': 5, 'h_dim_0': 112.0, 'h_dim_1': 112.0, 'h_dim_2': 80.0, 'h_dim_3': 48.0, 'h_dim_4': 32.0, 'dropout_l': 0.3662331675754532, 'activation': 'ELU', 'optimizer': 'MomentumSGD', 'weight_decay': 1.6725137600490258e-07, 'momentum_sgd_lr': 0.03471459650790357}
+Best_value：0.4872904247651666
+'''
